@@ -11,22 +11,28 @@ import matplotlib.pyplot as plt
 
 class Radar(object):
   def __init__(self, figure, filename, rect=None):
-      """ Takes in matplotlib plot area (figure), titles for the axes
-      (strings for the end points of the axes) , labels (these are just masks
-      over polar plots), and rect (list of left, bottom, width, height) for
-      matplotlib figure
+      """ Takes in matplotlib plot area (figure), Pandas data frame,
+      and rect (list of left, bottom, width, height) for matplotlib figure
       ## TODO:
         1) Programmatically generate axes min, max and every value in between.
         2) Translate list values to Polar Co-ordinates.
-            a) Function that takes a list of values (in the example, a list of percents)
-                and converts them to polar coordinates.
+            a) Function that takes a list of values (in the example, a list
+                of percents) and converts them to polar coordinates.
             b) Plots those points.
-        3)
+        3)itles for the axes
+      (strings for the end points of the axes) , labels (these are just masks
+      over polar plots)
       """
       if rect is None:
           rect = [0.05, 0.05, 0.9, 0.9]
-      # pull in the data
-      self.data = pd.read_csv('data/' + filename)
+
+      try:
+          self.data = pd.read_csv('data/' + filename)
+      except FileNotFoundError:
+          print('This file does not exist or the path is not correct.')
+      else:
+          print('The data frame has the following rows and columns: {}, {}' \
+            .format(*self.data.shape))
 
       # how many axes for the graph
       self.n = len(self.data.index)
