@@ -2,6 +2,8 @@ import numpy as np
 import pylab as pl
 import pandas as pd
 import matplotlib.pyplot as plt
+import pdb
+
 
 # Optionally use different styles for the graph
 # Gallery: http://tonysyu.github.io/raw_content/matplotlib-style-gallery/gallery.html
@@ -33,25 +35,22 @@ class Radar(object):
       else:
           print('The data frame has the following rows and columns: {}, {}' \
             .format(*self.data.shape))
-
-      # how many axes for the graph
-      self.n = len(self.data.index)
-      # how deep should the axes go
+      self.AXES_COUNT = len(self.data.index)
       AXES_DEPTH = 6
       # sets the angles in degrees as a numpy array
-      self.angles = np.arange(0, 360, 360.0/self.n)
+      self.angles = np.arange(0, 360, 360.0/self.AXES_COUNT)
 
-      # getting maximums- 11 maximums
+      # getting maximums- AXES_COUNT maximums
       self.maxes = self.data.max(1)
-      # getting minimums- 11 minimums
+      # getting minimums- AXES_COUNT minimums
       self.mins = self.data.min(1)
 
-      # getting a list of values between these
       axes_max = []
       for number in self.maxes:
           while number % AXES_DEPTH != 0:
               number += 1
           axes_max.append(number)
+
 
       axes_mins = []
       for number in self.mins:
@@ -59,10 +58,13 @@ class Radar(object):
               number -= 1
           axes_mins.append(number)
       print(len(axes_mins), len(axes_max))
+
       # get the increment for each axes
       increment_list = [(axes_max[spot] - axes_mins[spot]) / AXES_DEPTH for spot in range(0,len(axes_max))]
-      import pdb
+      pdb.set_trace()
       axes_marker = []
+
+      min_max_list = [[i, j] for i,j in zip(axes_mins, axes_max)]
       for spot in range(0, len(axes_max)):
           temp_list = []
           for tick_mark in range(axes_min[spot], axes_max[spot]):
@@ -72,7 +74,7 @@ class Radar(object):
           axes_marker = axes_marker.append(temp_list)
 
 
-      # self.axes = [figure.add_axes(rect, projection='polar', label='axes%d' % i) for i in range(self.n)]
+      # self.axes = [figure.add_axes(rect, projection='polar', label='axes%d' % i) for i in range(self.AXES_COUNT)]
       #
       # self.ax = self.axes[0]
       # self.ax.set_thetagrids(self.angles, labels=title, fontsize=14)
