@@ -33,7 +33,7 @@ class Radar(object):
       except FileNotFoundError:
           print('This file does not exist or the path is not correct.')
       else:
-          print('The data frame has the following rows and columns: {}, {}' \
+          print('The data frame has the following {} rows and {} columns.' \
             .format(*self.data.shape))
       self.AXES_COUNT = len(self.data.index)
       AXES_DEPTH = 6
@@ -47,45 +47,35 @@ class Radar(object):
 
       axes_max = []
       for number in self.maxes:
-          while number % AXES_DEPTH != 0:
+          while number % AXES_DEPTH != 1:
               number += 1
           axes_max.append(number)
 
 
       axes_mins = []
       for number in self.mins:
-          while number % AXES_DEPTH != 0:
+          while number % AXES_DEPTH != 1:
               number -= 1
           axes_mins.append(number)
-      print(len(axes_mins), len(axes_max))
 
-      # get the increment for each axes
-      increment_list = [(axes_max[spot] - axes_mins[spot]) / AXES_DEPTH for spot in range(0,len(axes_max))]
-      pdb.set_trace()
-      axes_marker = []
-
+      increment_list = [int((axes_max[spot] - axes_mins[spot]) / AXES_DEPTH)
+        for spot in range(0,len(axes_max))]
       min_max_list = [[i, j] for i,j in zip(axes_mins, axes_max)]
-      for spot in range(0, len(axes_max)):
-          temp_list = []
-          for tick_mark in range(axes_min[spot], axes_max[spot]):
-              pdb.set_trace()
-              tick_mark += increment_list[spot]
-              temp_list = temp_list.append(tick_mark)
-          axes_marker = axes_marker.append(temp_list)
+      axes_labels = [list(range(min_max_list[j][0], min_max_list[j][1],
+        increment_list[j])) for j in range(0, len(min_max_list))]
 
+      self.axes = [figure.add_axes(rect, projection='polar', label='axes%d' % i) for i in range(self.AXES_COUNT)]
 
-      # self.axes = [figure.add_axes(rect, projection='polar', label='axes%d' % i) for i in range(self.AXES_COUNT)]
-      #
-      # self.ax = self.axes[0]
-      # self.ax.set_thetagrids(self.angles, labels=title, fontsize=14)
+      self.ax = self.axes[0]
+      self.ax.set_thetagrids(self.angles, labels=axes_labels, fontsize=14)
 
-      # for ax in self.axes[1:]:
-      #     ax.patch.set_visible(False)
-      #     ax.grid(False)
-      #     ax.xaxis.set_visible(False)
+      for ax in self.axes[1:]:
+          ax.patch.set_visible(False)
+          ax.grid(False)
+          ax.xaxis.set_visible(False)
 
-      # for ax, angle, label in zip(self.axes, self.angles, labels):
-      #     ax.set_rgrids(range(1, AXES_DEPTH + 1), angle=angle, labels=label) # 6
+      # for ax, angle, label in zip(self.axes, self.angles, range(len(self.data.index.tolist()))):
+      #     ax.set_rgrids(range(1, AXES_DEPTH + 1), angle=angle, labels=self.data.index.[label]) # 6
       #     ax.spines['polar'].set_visible(False)
       #     ax.set_ylim(0, AXES_DEPTH + 1)
 
@@ -97,30 +87,15 @@ class Radar(object):
 if __name__ == '__main__':
     fig = plt.figure(figsize=(11, 11))
 
-    # tit = [1,2,3,4,5, 6, 7, 8, 9,10,11] # 12x
-
-    # lab = [
-    #     [ 0 ,  15 ,  30 ,  45 ,  60 ,  75 ],
-    #     [ 0 ,  -10 ,  -20 ,  -30 ,  -40 ,  -50 ],
-    #     [ 0 ,  -20 ,  -40 ,  -60 ,  -80 ,  -100 ],
-    #     [ 0 ,  -20 ,  -40 ,  -60 ,  -80 ,  -100 ],
-    #     [ 0 ,  -6 ,  -12 ,  -18 ,  -24 ,  -30 ],
-    #     [ 0 ,  - 14 ,  -28 ,  -42 ,  -56 ,  -70 ],
-    #     [ 0 ,  250 ,  500 ,  750 ,  1000 ,  1250 ],
-    #     [ 0 ,  3 ,  6 ,  9 ,  12 ,  15 ],
-    #     [ 0 ,  50 ,  100 ,  150 ,  200 ,  250 ],
-    #     [ 0 ,  -4 ,  -8 ,  -12 ,  -16 ,  -20 ],
-    #     [ 0 ,  -6 ,  -12 ,  -18 ,  -24 ,  -30 ]
-    # ]
 
     radar = Radar(fig, 'data.csv')
-    # radar.plot([1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1]
-    #            ,  '-', lw=3, color='b', alpha=0.4, label='1')
-    # radar.plot([4.60, 4.10, 5.45, 5.60, 4.83, 4.57, 4.78, 5.00, 4.78, 5.00, 4.83]
-    #            , '-', lw=3, color='r', alpha=0.4, label='2')
-    # radar.plot([4.60, 3.80, 5.45, 5.60, 3.83, 4.29, 5.01, 5.00, 4.94, 4.75, 4.33]
-    #            , '-', lw=3, color='g', alpha=0.4, label='3')
-    # radar.plot([4.60, 4.50, 5.45, 5.65, 5.83, 4.79, 4.55, 5.00, 4.62, 5.50, 5.17]
-    #            , '-', lw=3, color='y', alpha=0.4, label='4')
-    # radar.ax.legend()
-    # plt.savefig('attempt.png', bbox_inches = 'tight', dpi = 500)
+    radar.plot([1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1]
+               ,  '-', lw=3, color='b', alpha=0.4, label='1')
+    radar.plot([4.60, 4.10, 5.45, 5.60, 4.83, 4.57, 4.78, 5.00, 4.78, 5.00, 4.83]
+               , '-', lw=3, color='r', alpha=0.4, label='2')
+    radar.plot([4.60, 3.80, 5.45, 5.60, 3.83, 4.29, 5.01, 5.00, 4.94, 4.75, 4.33]
+               , '-', lw=3, color='g', alpha=0.4, label='3')
+    radar.plot([4.60, 4.50, 5.45, 5.65, 5.83, 4.79, 4.55, 5.00, 4.62, 5.50, 5.17]
+               , '-', lw=3, color='y', alpha=0.4, label='4')
+    radar.ax.legend()
+    plt.savefig('attempt.png', bbox_inches = 'tight', dpi = 500)
