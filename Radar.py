@@ -35,7 +35,7 @@ class Radar(object):
           print('The data frame has {} rows and {} columns.' \
             .format(*self.data.shape))
       self.AXES_COUNT = len(self.data.index)
-      AXES_DEPTH = 7
+      self.AXES_DEPTH = 7
       # sets the angles in degrees as a numpy array
       self.angles = np.arange(0, 360, 360.0/self.AXES_COUNT)
 
@@ -46,26 +46,26 @@ class Radar(object):
 
       axes_max = []
       for number in self.maxes:
-          while number % AXES_DEPTH != 0:
+          while number % self.AXES_DEPTH != 0:
               number += 1
           axes_max.append(number)
 
 
       axes_mins = []
       for number in self.mins:
-          while number % AXES_DEPTH != 0:
+          while number % self.AXES_DEPTH != 0:
               number -= 1
           axes_mins.append(number)
       #axes_mins = [0] * len(axes_max)
       # increasing negative axes so range will work
       axes_max = [1 if max == 0 else max for max in axes_max]
 
-      increment_list = [int((axes_max[spot] - axes_mins[spot]) / AXES_DEPTH)
+      self.increment_list = [int((axes_max[spot] - axes_mins[spot]) / self.AXES_DEPTH)
         for spot in range(len(axes_max))]
       min_max_list = [[i, j] for i,j in zip(axes_mins, axes_max)]
 
       axes_labels = [list(range(min_max_list[j][0], min_max_list[j][1],
-        increment_list[j])) for j in range(0, len(min_max_list))]
+        self.increment_list[j])) for j in range(0, len(min_max_list))]
 
       for row in row_list:
           axes_labels[row] = axes_labels[row][::-1]
@@ -82,9 +82,9 @@ class Radar(object):
           ax.xaxis.set_visible(False)
 
       for ax, angle, label in zip(self.axes, self.angles, range(len(self.data.index.tolist()))):
-          ax.set_rgrids(range(1, AXES_DEPTH + 2), angle=angle, labels=axes_labels[label]) # 6
+          ax.set_rgrids(range(1, self.AXES_DEPTH + 2), angle=angle, labels=axes_labels[label]) # 6
           ax.spines['polar'].set_visible(False)
-          ax.set_ylim(0, AXES_DEPTH + 1)
+          ax.set_ylim(0, self.AXES_DEPTH + 1)
 
   def plot(self, values, *args, **kw):
       angle = np.deg2rad(np.r_[self.angles, self.angles[0]])
@@ -94,7 +94,14 @@ class Radar(object):
   def plot2(self, *args, **kw):
       plots = self.data.shape[1] - 1
       # need something convert each cols vals to polar co-ordinates
-
+      # 78 goes to 6 and 0 goes to 1
+      slope = (self.maxes[0] - self.mins[0]) / (self.AXES_DEPTH - 1)
+      int = self.AXES_DEPTH - (slope * self.maxes[0])
+      plot = (slope * self.data.iloc[0].astype('float64')) + int
+      pdb.set_trace()
+      angle = np.deg2rad(np.r_[self.angles, self.angles[0]])
+      values = np.r_[plot, plot[0]]
+      self.ax.plot(angle, values)
       # get a list of slopes
       # get a list of y-ints
 
