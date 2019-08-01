@@ -12,7 +12,7 @@ import pdb
 
 
 class Radar(object):
-  def __init__(self, figure, filename, row_list, rect=None):
+  def __init__(self, figure, filename, row_list=None, rect=None):
       """ Takes in matplotlib plot area (figure), Pandas data frame,
       and rect (list of left, bottom, width, height) for matplotlib figure
       ## TODO:
@@ -67,9 +67,10 @@ class Radar(object):
       axes_labels = [list(range(min_max_list[j][0], min_max_list[j][1],
         self.increment_list[j])) for j in range(0, len(min_max_list))]
 
-      for row in row_list:
-          axes_labels[row] = axes_labels[row][::-1]
-      axes_labels = [label_set[0:7] for label_set in axes_labels]
+      if row_list:
+          for row in row_list:
+              axes_labels[row] = axes_labels[row][::-1]
+          axes_labels = [label_set[0:7] for label_set in axes_labels]
 
       self.axes = [figure.add_axes(rect, projection='polar', label='axes%d' % i) for i in range(self.AXES_COUNT)]
 
@@ -93,17 +94,19 @@ class Radar(object):
 
   def plot2(self, *args, **kw):
       plots = self.data.shape[1] - 1
-      # need something convert each cols vals to polar co-ordinates
       # 78 goes to 6 and 0 goes to 1
-      slope = (self.maxes[0] - self.mins[0]) / (self.AXES_DEPTH - 1)
-      int = self.AXES_DEPTH - (slope * self.maxes[0])
-      plot = (slope * self.data.iloc[0].astype('float64')) + int
+      slopes = [(self.AXES_DEPTH - 1) / (self.maxes[i] - self.mins[i]) for i in range(len(self.maxes))]
+      # find the intercepts
+      int = [(self.AXES_DEPTH - 1) - (slopes[i] * self.maxes.tolist()[i]) for i in range(len(self.maxes))]
+
+      #
       pdb.set_trace()
+      plots_frame = self.data.apply(lambda x: x * slopes + int, axis = 0)
       angle = np.deg2rad(np.r_[self.angles, self.angles[0]])
-      values = np.r_[plot, plot[0]]
-      self.ax.plot(angle, values)
-      # get a list of slopes
-      # get a list of y-ints
+      values = plots_frame.to_numpy().tolist()
+
+      for row in values:
+          self.ax.plot(angle, row)
 
 
 
@@ -112,15 +115,7 @@ if __name__ == '__main__':
     fig = plt.figure(figsize=(11, 11))
 
 
-    radar = Radar(fig, 'data.csv', [1, 2, 3, 4, 5, 9, 10])
-    radar.plot([1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1]
-               ,  '-', lw=3, color='b', alpha=0.4, label='1')
-    radar.plot([4.60, 4.10, 5.45, 5.60, 4.83, 4.57, 4.78, 5.00, 4.78, 5.00, 4.83]
-               , '-', lw=3, color='r', alpha=0.4, label='2')
-    radar.plot([4.60, 3.80, 5.45, 5.60, 3.83, 4.29, 5.01, 5.00, 4.94, 4.75, 4.33]
-               , '-', lw=3, color='g', alpha=0.4, label='3')
-    radar.plot([4.60, 4.50, 5.45, 5.65, 5.83, 4.79, 4.55, 5.00, 4.62, 5.50, 5.17]
-               , '-', lw=3, color='y', alpha=0.4, label='4')
+    radar = Radar(fig, 'data_small.csv')
     radar.plot2()
     radar.ax.legend()
     plt.savefig('attempt.png', bbox_inches = 'tight', dpi = 500)
