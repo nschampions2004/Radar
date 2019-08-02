@@ -12,31 +12,31 @@ import pdb
 
 
 class Radar(object):
-  def __init__(self, figure, filename, rect=None):
+  def __init__(self, figure, filename, row_list=None, rect=None):
       """ Takes in matplotlib plot area (figure), Pandas data frame,
       and rect (list of left, bottom, width, height) for matplotlib figure
-      ## TODO:
-        1) Programmatically generate axes min, max and every value in between.
-        2) Translate list values to Polar Co-ordinates.
-            a) Function that takes a list of values (in the example, a list
-                of percents) and converts them to polar coordinates.
-            b) Plots those points.
-        3)itles for the axes
       (strings for the end points of the axes) , labels (these are just masks
-      over polar plots)
+      over polar plots).
+
+      The index or left most column is the number of axes.  Additionally, each
+      column is a
       """
       if rect is None:
           rect = [0.05, 0.05, 0.9, 0.9]
 
       try:
-          self.data = pd.read_csv('data/' + filename)
+          self.data = pd.read_csv('data/' + filename,
+                        index_col = 0)
       except FileNotFoundError:
           print('This file does not exist or the path is not correct.')
       else:
-          print('The data frame has the following {} rows and {} columns.' \
+          print('The data frame has {} rows and {} columns.' \
             .format(*self.data.shape))
+
+      # set the qualifying axes characteristics
       self.AXES_COUNT = len(self.data.index)
-      AXES_DEPTH = 6
+      self.AXES_DEPTH = 7
+
       # sets the angles in degrees as a numpy array
       self.angles = np.arange(0, 360, 360.0/self.AXES_COUNT)
 
@@ -45,57 +45,81 @@ class Radar(object):
       # getting minimums- AXES_COUNT minimums
       self.mins = self.data.min(1)
 
+      # walk out till your axes are are divisible by AXES_DEPTH
       axes_max = []
       for number in self.maxes:
-          while number % AXES_DEPTH != 1:
+          while number % self.AXES_DEPTH != 0:
               number += 1
           axes_max.append(number)
-
-
       axes_mins = []
       for number in self.mins:
-          while number % AXES_DEPTH != 1:
+          while number % self.AXES_DEPTH != 0:
               number -= 1
           axes_mins.append(number)
 
-      increment_list = [int((axes_max[spot] - axes_mins[spot]) / AXES_DEPTH)
-        for spot in range(0,len(axes_max))]
-      min_max_list = [[i, j] for i,j in zip(axes_mins, axes_max)]
-      axes_labels = [list(range(min_max_list[j][0], min_max_list[j][1],
-        increment_list[j])) for j in range(0, len(min_max_list))]
 
-      self.axes = [figure.add_axes(rect, projection='polar', label='axes%d' % i) for i in range(self.AXES_COUNT)]
+      # increasing negative axes so range will work
+      axes_max = [1 if max == 0 else max for max in axes_max]
+
+      # find how each axes should be incremented by
+      self.increment_list = [int((axes_max[spot] - axes_mins[spot]) / self.AXES_DEPTH)
+        for spot in range(len(axes_max))]
+      min_max_list = [[int(min), int(max)] for min,max in zip(axes_mins, axes_max)]
+
+      axes_labels = [list(range(min_max_list[min_max_pair][0],
+        min_max_list[min_max_pair][1], self.increment_list[min_max_pair]))
+            for min_max_pair in range(0, len(min_max_list))]
+
+      # flip negative-based axes to go in opposite order
+      if row_list:
+          for row in row_list:
+              axes_labels[row] = axes_labels[row][::-1]
+          axes_labels = [label_set[0:AXES_DEPTH] for label_set in axes_labels]
+
+      self.axes = [figure.add_axes(rect, projection='polar', label='axes%d' % i)
+        for i in range(self.AXES_COUNT)]
 
       self.ax = self.axes[0]
-      self.ax.set_thetagrids(self.angles, labels=axes_labels, fontsize=14)
+      self.ax.set_thetagrids(self.angles, labels=self.data.index, fontsize=14)
 
       for ax in self.axes[1:]:
           ax.patch.set_visible(False)
           ax.grid(False)
           ax.xaxis.set_visible(False)
 
-      # for ax, angle, label in zip(self.axes, self.angles, range(len(self.data.index.tolist()))):
-      #     ax.set_rgrids(range(1, AXES_DEPTH + 1), angle=angle, labels=self.data.index.[label]) # 6
-      #     ax.spines['polar'].set_visible(False)
-      #     ax.set_ylim(0, AXES_DEPTH + 1)
+      for ax, angle, label in zip(self.axes, self.angles, range(len(self.data.index.tolist()))):
+          ax.set_rgrids(range(1, self.AXES_DEPTH + 2), angle=angle, labels=axes_labels[label]) # 6
+          ax.spines['polar'].set_visible(False)
+          ax.set_ylim(0, self.AXES_DEPTH + 1)
 
-  def plot(self, values, *args, **kw):
+
+  def plot(self, *args, **kw):
+      plots = self.data.shape[1] - 1
+
+      # calculate slopes and intercepts
+      slopes = [(self.AXES_DEPTH - 1) / (self.maxes[i] - self.mins[i])
+        for i in range(len(self.maxes))]
+      int = [(self.AXES_DEPTH - 1) - (slopes[i] * self.maxes.tolist()[i])
+        for i in range(len(self.maxes))]
+
+      # normalize values between 1 and AXES_DEPTH
+      plots_frame = self.data.apply(lambda x: x * slopes + int + 1, axis = 0)
       angle = np.deg2rad(np.r_[self.angles, self.angles[0]])
-      values = np.r_[values, values[0]]
-      self.ax.plot(angle, values, *args, **kw)
+      values = plots_frame.to_numpy().tolist()
+
+      # plot the lines
+      for row in values:
+          row = np.r_[row, row[0]]
+          self.ax.plot(angle, row)
+
+
+
 
 if __name__ == '__main__':
     fig = plt.figure(figsize=(11, 11))
 
 
-    radar = Radar(fig, 'data.csv')
-    radar.plot([1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1]
-               ,  '-', lw=3, color='b', alpha=0.4, label='1')
-    radar.plot([4.60, 4.10, 5.45, 5.60, 4.83, 4.57, 4.78, 5.00, 4.78, 5.00, 4.83]
-               , '-', lw=3, color='r', alpha=0.4, label='2')
-    radar.plot([4.60, 3.80, 5.45, 5.60, 3.83, 4.29, 5.01, 5.00, 4.94, 4.75, 4.33]
-               , '-', lw=3, color='g', alpha=0.4, label='3')
-    radar.plot([4.60, 4.50, 5.45, 5.65, 5.83, 4.79, 4.55, 5.00, 4.62, 5.50, 5.17]
-               , '-', lw=3, color='y', alpha=0.4, label='4')
+    radar = Radar(fig, 'data_small.csv')
+    radar.plot()
     radar.ax.legend()
     plt.savefig('attempt.png', bbox_inches = 'tight', dpi = 500)
