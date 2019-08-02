@@ -1,6 +1,6 @@
-Rows,Blue, Red, Green, Yellow, Purple, Pink
-Cow,0,15,30,45,60,75
-Dog,0,250,500,750,1000,1250
-Cat,0,3,6,9,12,15
-Monkey,0,50,100,150,200,250
-Fish,0,25,75,100,175,275
+Rows,Blue, Red, Green, Yellow, Purple
+Cow,0,15,30,45,60
+Dog,0,250,500,750,1000
+Cat,0,3,6,9,12
+Monkey,0,50,100,150,200
+Fish,0,25,75,100,175
